@@ -79,7 +79,16 @@ clear_database()
 
 # Load osha_injury_2016_2021.csv (File 1) directly to Incident table
 file_path = '/app/osha_injury_2016_2021.csv'
-df_injury = pd.read_csv(file_path, low_memory=False)
+print("Loading OSHA injury dataset...")
+try:
+    df_injury = pd.read_csv(file_path, low_memory=False, encoding='utf-8')
+except UnicodeDecodeError:
+    print("UTF-8 failed — trying Windows-1252 (common with OSHA files)...")
+    df_injury = pd.read_csv(file_path, low_memory=False, encoding='cp1252')
+except Exception as e:
+    print(f"CSV load failed: {e}")
+    sys.exit(1)
+
 print(f"Processing osha_injury_2016_2021.csv - Total rows: {len(df_injury)}")
 
 # Map columns to Incident model fields (dummy for FKs, handle NaN)
@@ -107,7 +116,16 @@ print("Loaded osha_injury_2016_2021 data.")
 
 # Load osha_sir.csv (File 2) directly to Incident table
 file_path = '/app/osha_sir.csv'
-df_sir = pd.read_csv(file_path, low_memory=False)
+print("Loading OSHA SIR dataset...")
+try:
+    df_sir = pd.read_csv(file_path, low_memory=False, encoding='utf-8')
+except UnicodeDecodeError:
+    print("UTF-8 failed — trying Windows-1252 (common with OSHA files)...")
+    df_sir = pd.read_csv(file_path, low_memory=False, encoding='cp1252')
+except Exception as e:
+    print(f"CSV load failed: {e}")
+    sys.exit(1)
+
 print(f"Processing osha_sir.csv - Total rows: {len(df_sir)}")
 
 # Map columns to Incident model fields
@@ -135,7 +153,16 @@ print("Loaded osha_sir data.")
 
 # Load osha_abstracts_2015_2017.csv (File 3) directly to Incident table
 file_path = '/app/osha_abstracts_2015_2017.csv'
-df_abstracts = pd.read_csv(file_path, low_memory=False)
+print("Loading OSHA Abstracts dataset...")
+try:
+    df_abstracts = pd.read_csv(file_path, low_memory=False, encoding='utf-8')
+except UnicodeDecodeError:
+    print("UTF-8 failed — trying Windows-1252 (common with OSHA files)...")
+    df_abstracts = pd.read_csv(file_path, low_memory=False, encoding='cp1252')
+except Exception as e:
+    print(f"CSV load failed: {e}")
+    sys.exit(1)
+
 print(f"Processing osha_abstracts_2015_2017.csv - Total rows: {len(df_abstracts)}")
 
 # Map columns to Incident model fields
