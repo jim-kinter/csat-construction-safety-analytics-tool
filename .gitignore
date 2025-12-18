@@ -1,0 +1,12 @@
+csat_env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
+*.csat_env
+*.csv

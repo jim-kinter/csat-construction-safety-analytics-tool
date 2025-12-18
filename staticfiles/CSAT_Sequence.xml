@@ -1,0 +1,52 @@
+<mxfile>
+  <diagram name="CSAT Risk Assessment Sequence">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell value="User" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="80" width="80" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell value="Django View" style="shape=umlLifeline;participant=umlActor;html=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="80" width="100" height="500" as="geometry"/>
+        </mxCell>
+        <mxCell value="Risk Model" style="shape=umlLifeline;participant=umlActor;html=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="80" width="100" height="500" as="geometry"/>
+        </mxCell>
+        <mxCell value="OpenAI GPT-4o" style="shape=umlLifeline;participant=umlActor;html=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="80" width="120" height="500" as="geometry"/>
+        </mxCell>
+        <mxCell value="Database" style="shape=umlLifeline;participant=umlActor;html=1;" vertex="1" parent="1">
+          <mxGeometry x="840" y="80" width="100" height="500" as="geometry"/>
+        </mxCell>
+
+        <!-- Messages -->
+        <mxCell value="POST activities" style="endArrow=classic;html=1;" edge="1" source="first" target="second" parent="1">
+          <mxGeometry y="100" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell value="predict_proba()" style="endArrow=classic;html=1;" edge="1" source="second" target="third" parent="1">
+          <mxGeometry y="140" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell value="Return risk + severity" style="endArrow=classic;startArrow=classic;html=1;" edge="1" source="third" target="second" parent="1">
+          <mxGeometry y="180" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell value="Call GPT-4o" style="endArrow=classic;html=1;" edge="1" source="second" target="fourth" parent="1">
+          <mxGeometry y="220" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell value="Generate mitigation" style="endArrow=classic;startArrow=classic;html=1;" edge="1" source="fourth" target="second" parent="1">
+          <mxGeometry y="260" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell value="Save to session" style="endArrow=classic;html=1;" edge="1" source="second" target="fifth" parent="1">
+          <mxGeometry y="300" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell value="Render results" style="endArrow=classic;html=1;" edge="1" source="second" target="first" parent="1">
+          <mxGeometry y="340" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell value="CSAT Risk Assessment Flow" style="text;html=1;align=center;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="450" y="20" width="300" height="40" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
