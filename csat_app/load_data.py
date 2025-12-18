@@ -19,19 +19,42 @@ import math
 from tqdm import tqdm
 import numpy as np
 
-import urllib.request
 import pathlib
+import urllib.request
 
-# Auto-download the OSHA dataset if it's missing
-DATA_FILE = pathlib.Path('/app/osha_injury_2016_2021.csv')
-if not DATA_FILE.exists():
-    print(f"OSHA dataset found ({DATA_FILE.stat().st_size / 1e6:.1f} MB)")
+OSHA_INJURY_DATA_FILE = pathlib.Path('/app/osha_injury_2016_2021.csv')
+OSHA_SIR_DATA_FILE = pathlib.Path('/app/osha_sir.csv')
+
+if OSHA_INJURY_DATA_FILE.exists():
+    size_mb = OSHA_INJURY_DATA_FILE.stat().st_size / (1024 * 1024)
+    print(f"OSHA Injury dataset found ({size_mb:.1f} MB)")
 else:
-    print("OSHA dataset not found — downloading (~180 MB)...")
-    url = "https://github.com/WTAMU-CIDM6395/James-Kinter/releases/download/v1.0/osha_injury_2016_2021.csv"
-    urllib.request.urlretrieve(url, DATA_FILE)
+    print("OSHA Injury dataset not found — downloading (~390 MB) from GitHub release...")
+    url = "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_injury_2016_2021.csv"
+
+    # Add a real browser User-Agent to bypass GitHub's bot protection
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')]
+    urllib.request.install_opener(opener)
+
+    urllib.request.urlretrieve(url, OSHA_INJURY_DATA_FILE)
     print("Download complete!")
-    
+
+if OSHA_SIR_DATA_FILE.exists():
+    size_mb = OSHA_SIR_DATA_FILE.stat().st_size / (1024 * 1024)
+    print(f"OSHA SIR dataset found ({size_mb:.1f} MB)")
+else:
+    print("OSHA SIR dataset not found — downloading (~50 MB) from GitHub release...")
+    url = "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_sir.csv"
+
+    # Add a real browser User-Agent to bypass GitHub's bot protection
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')]
+    urllib.request.install_opener(opener)
+
+    urllib.request.urlretrieve(url, OSHA_SIR_DATA_FILE)
+    print("Download complete!")  
+
 # Clear all existing records from the database
 def clear_database():
     #IncidentEmployee.objects.all().delete()
