@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CSAT – Construction Safety Analytics Tool{% endblock %}
+
+{% block content %}
+<div style="text-align:center; padding:60px 20px; max-width:900px; margin:0 auto;">
+    <!-- Hero Section -->
+    <h1 style="font-size:3rem; margin-bottom:20px; color:#2c3e50;">
+        Construction Safety Analytics Tool
+    </h1>
+    <p style="font-size:1.3rem; color:#555; margin-bottom:40px; line-height:1.7;">
+        Transform historical incident data into <strong>actionable safety intelligence</strong> using<br>
+        <em>Descriptive • Diagnostic • Predictive • Prescriptive</em> analytics.
+    </p>
+
+    <!-- Feature Cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:25px; margin:50px 0;">
+        <div style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+            <h3 style="color:#3498db; margin-bottom:15px;">Risk Assessment</h3>
+            <p>Enter planned activities and equipment — get instant risk scores and recommendations.</p>
+            <a href="{% url 'risk_assessment' %}" class="btn btn-primary" style="margin-top:15px;">Start Assessment</a>
+        </div>
+
+        <div style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+            <h3 style="color:#27ae60; margin-bottom:15px;">My Plans</h3>
+            <p>Save, load, and manage all your safety plans in one place.</p>
+            <a href="{% url 'my_plans' %}" class="btn btn-success" style="margin-top:15px;">View Plans</a>
+        </div>
+
+        <div style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+            <h3 style="color:#e67e22; margin-bottom:15px;">Analytics Dashboard</h3>
+            <p>Full 4-tier analytics: What happened? Why? What will? What should we do?</p>
+            <a href="{% url 'analytics' %}" class="btn btn-warning" style="margin-top:15px;">Open Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="margin:60px 0; font-size:1.1rem; color:#444;">
+        <p><strong>Currently tracking:</strong></p>
+        <p>{{ incident_count|default:"1,635,164+" }} total incidents • {{ location_count|default:"Millions" }} of locations • {{ type_count|default:"Thousands" }} of incident types</p>
+    </div>
+
+    <!-- Footer CTA -->
+    <p style="margin-top:50px;">
+        <em>Built for safety leaders who refuse to let the next incident be a surprise.</em>
+    </p>
+</div>
+{% endblock %}

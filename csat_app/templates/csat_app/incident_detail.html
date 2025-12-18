@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Incident Detail</h1>
+
+<div style="background:#f9f9f9; padding:20px; border:1px solid #ddd; border-radius:8px; max-width:800px;">
+    <p><strong>Date & Time:</strong> {{ incident.date|date:"Y-m-d H:i" }}</p>
+    <p><strong>Severity:</strong> <span style="font-weight:bold; color:{% if incident.severity == 'High' %}red{% elif incident.severity == 'Medium' %}orange{% else %}green{% endif %};">{{ incident.severity }}</span></p>
+    <p><strong>Description:</strong><br>{{ incident.description|linebreaks }}</p>
+    <p><strong>Cause:</strong><br>{{ incident.cause|default:"Not recorded"|linebreaks }}</p>
+    <p><strong>Outcome:</strong><br>{{ incident.outcome|default:"Not recorded"|linebreaks }}</p>
+    <p><strong>Weather:</strong> {{ incident.weather|default:"Unknown" }}</p>
+    <p><strong>Equipment Involved:</strong> {{ incident.equipment_involved|default:"None recorded" }}</p>
+    <p><strong>Location:</strong> {{ incident.location.name }} – {{ incident.location.address }}</p>
+    <p><strong>Incident Type:</strong> {{ incident.type.name }}</p>
+</div>
+
+<p style="margin-top:20px;">
+    <a href="{% url 'risk_assessment' %}">Back to Risk Assessment</a> |
+    <a href="{% url 'incident_list' %}">All Incidents</a>
+</p>
+{% endblock %}

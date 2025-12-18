@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Risk Assessment</h1>
+
+<!-- Add Activity Section -->
+<div style="margin: 20px 0; padding: 20px; background:#f8f9fa; border-radius:10px; border:1px solid #e0e0e0;">
+    <form method="post">
+        {% csrf_token %}
+        <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-end;">
+            <div style="flex:1; min-width:300px;">
+                {{ form.activities.label_tag }}
+                {{ form.activities }}
+            </div>
+            <div>
+                <button type="submit" class="btn btn-success" style="padding:12px 30px; font-size:1rem; font-weight:600;">
+                    Add Activity
+                </button>
+            </div>
+        </div>
+    </form>
+
+<!-- Save Plan Section -->
+{% if activities %}
+<div style="margin-top:25px; padding-top:20px; border-top:1px solid #ddd;">
+    <form method="post" action="{% url 'save_plan' %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="text" name="plan_name" placeholder="Plan name (optional)" 
+               style="padding:10px 14px; margin-right:12px; border-radius:6px; border:1px solid #ccc; font-size:1rem;">
+        <button type="submit" class="btn btn-success" style="padding:12px 30px; font-size:1rem; font-weight:600;">
+            Save Plan Permanently
+        </button>
+    </form>
+
+    <!-- Export button OUTSIDE the form → safe and clean -->
+    <a href="{% url 'export_pdf' %}?name={% if activities.0.name %}{{ activities.0.name|slice:":15" }}{% endif %} Plan"
+       class="btn btn-primary" style="margin-left:15px; padding:12px 30px; font-size:1rem; font-weight:600;">
+        Export PDF Report
+    </a>
+</div>
+{% endif %}
+</div>
+
+<!-- Current Plan Table -->
+{% if activities %}
+<h2>Current Plan ({{ activities|length }} activities)</h2>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Activity</th>
+                <th>Equipment</th>
+                <th>Height (ft)</th>
+                <th>Month</th>
+                <th>State</th>
+                <th>Crew Size</th>
+                <th>Risk Score</th>
+                <th>Assessment</th>
+                <th>Predicted Incident</th>
+                <th>Recommendation</th>
+                <th>Similar Incidents</th>
+                <th>Remove</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for act in activities %}
+            <tr>
+                <td>{{ forloopFRA.counter }}</td>
+                <td contenteditable="true" data-field="name">{{ act.name }}</td>
+                <td contenteditable="true" data-field="equipment">{{ act.equipment }}</td>
+                <td>{{ act.height }}</td>
+                <td>{{ act.month }}</td>
+                <td>{{ act.state }}</td>
+                <td>{{ act.crew }}</td>
+                <td>{{ act.risk_score|floatformat:2 }}</td>
+                <td>{{ act.assessment }}</td>
+                <td>{{ act.predicted_incident }}</td>
+                <td>{{ act.recommendation }}</td>
+                <td>
+                    <a href="{% url 'similar_incidents' act.name act.equipment %}" style="color:#3498db;">View</a>
+                </td>
+                <td style="text-align:center;">
+                    <form method="post" action="{% url 'remove_activity' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                        <button type="submit" class="btn" 
+                                style="background:#e74c3c; color:white; padding:6px 10px; font-size:0.9rem; border:none; border-radius:4px;"
+                                onclick="return confirm('Remove this activity from the plan?')">
+                            X
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align:center; color:#777; padding:30px;">
+                    No activities in plan yet. Add some above!
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p style="margin-top:30px;">
+    <a href="{% url 'my_plans' %}" class="btn btn-primary">My Saved Plans</a>
+    <a href="{% url 'analytics' %}" class="btn btn-primary" style="margin-left:10px;">Analytics Dashboard</a>
+</p>
+
+{% else %}
+<p>No activities added yet. Use the form above to start building your plan.</p>
+
+<!-- My Saved Plans link is now ALWAYS visible -->
+<p style="margin-top:30px;">
+    <a href="{% url 'my_plans' %}" class="btn btn-primary">My Saved Plans</a>
+    <a href="{% url 'analytics' %}" class="btn btn-primary" style="margin-left:10px;">Analytics Dashboard</a>
+</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}My Saved Plans{% endblock %}
+
+{% block content %}
+<h1>My Saved Plans</h1>
+
+{% if plans %}
+<table class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Saved On</th>
+                <th>Activities</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for plan in plans %}
+            <tr>
+                <td><strong>{{ plan.name }}</strong></td>
+                <td>{{ plan.created_at|date:"M d, Y H:i" }}</td>
+                <td>{{ plan.activities_json|length }} activities</td>
+                <td>
+                    <a href="{% url 'load_plan' plan.id %}" class="btn btn-primary btn-sm">Load</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</table>
+{% else %}
+<p>You haven't saved any plans yet.</p>
+{% endif %}
+
+<p style="margin-top: 30px;">
+    <a href="{% url 'risk_assessment' %}" class="btn btn-success">← Back to Risk Assessment</a>
+</p>
+{% endblock %}

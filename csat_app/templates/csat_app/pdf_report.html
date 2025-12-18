@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CSAT Safety Report – {{ plan_name|default:"Current Plan" }}</title>
+    <style>
+        body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; margin: 40px; color: #333; line-height: 1.6; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .high { background-color: #fdf2f2; }
+        .medium { background-color: #fff9e6; }
+        .low { background-color: #f0fff0; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .footer { margin-top: 60px; text-align: center; color: #7f8c8d; font-size: 0.9em; }
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Construction Safety Analytics Tool</h1>
+        <h2>Safety Plan Risk Report</h2>
+        <p><strong>Plan:</strong> {{ plan_name|default:"Unsaved Plan" }}<br>
+           <strong>Generated:</strong> {{ generated_at }}</p>
+    </div>
+
+    <h2>Planned Activities & Risk Assessment</h2>
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Activity</th>
+            <th>Equipment</th>
+            <th>Risk Score</th>
+            <th>Severity</th>
+            <th>Recommendation</th>
+        </tr>
+        {% for act in activities %}
+        <tr class="{% if act.severity == 'High' %}high{% elif act.severity == 'Medium' %}medium{% else %}low{% endif %}">
+            <td>{{ forloop.counter }}</td>
+            <td>{{ act.name }}</td>
+            <td>{{ act.equipment }}</td>
+            <td>{{ act.risk_score|floatformat:3 }}</td>
+            <td>{{ act.severity }}</td>
+            <td>{{ act.recommendation }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="footer">
+        <p>CSAT – Construction Safety Analytics Tool</p>
+        <p>© {{ generated_at|date:"Y" }} • Capstone Project</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}CSAT Analytics Dashboard{% endblock %}
+
+{% block content %}
+<h1>CSAT Analytics Dashboard</h1>
+
+<form method="get">
+    <label>Filter by Saved Plan:</label>
+    <select name="plan" onchange="this.form.submit()">
+        {% for pid, pname in plan_choices %}
+        <option value="{{ pid }}" {% if pid == current_plan %}selected{% endif %}>{{ pname }}</option>
+        {% endfor %}
+    </select>
+</form>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(600px,1fr)); gap:30px; margin:30px 0;">
+    <div><h2>Descriptive – What Happened (or could happen)?</h2>{{ descriptive_scatter|safe }}</div>
+    <div><h2>Diagnostic – Why Did (or could) It Happen?</h2>{{ diagnostic_heatmap|safe }}</div>
+    <div style="margin:30px 0;"><h2>Predictive – Risk Trend + Forecast</h2>{{ predictive_trend|safe }} 
+        <div style="text-align:center; margin-top:15px;">{{ legend_html|safe }}</div>
+    </div>
+    <div><h2>Prescriptive – Mitigation Recommendations</h2>
+        <div class="analytics-prescriptive-table">{{ prescriptive_table|safe }}</div>
+    </div>
+    </div>
+
+<p style="text-align:center; margin-top:40px;">
+    <a href="{% url 'risk_assessment' %}" class="btn btn-primary">Back to Risk Assessment</a>
+</p>
+{% endblock %}

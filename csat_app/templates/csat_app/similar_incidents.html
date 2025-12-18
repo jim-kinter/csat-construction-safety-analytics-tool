@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Similar Historical Incidents</h1>
+
+<h2>For Activity: {{ activity_name }}</h2>
+<h3>Equipment: {{ equipment }}</h3>
+
+{% if incidents %}
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse: collapse;">
+    <thead style="background:#f0f0f0;">
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Severity</th>
+            <th>Equipment Involved</th>
+            <th>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for inc in incidents %}
+        <tr>
+            <td>{{ inc.date|date:"Y-m-d H:i" }}</td>
+            <td>{{ inc.description|truncatewords:30 }}</td>
+            <td>{{ inc.severity }}</td>
+            <td>{{ inc.equipment_involved|default:"—" }}</td>
+            <td><a href="{% url 'incident_detail' inc.id %}">View Full Incident</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p><em>No similar historical incidents found.</em></p>
+{% endif %}
+
+<p><a href="{% url 'risk_assessment' %}">← Back to Risk Assessment</a></p>
+{% endblock %}

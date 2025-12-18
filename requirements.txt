@@ -1,0 +1,15 @@
+django==5.1.2
+mysqlclient==2.2.5
+pandas==2.2.3
+faker==30.8.0
+tqdm==4.67.1
+sqlalchemy==2.0.35
+pymysql==1.1.1
+scikit-learn==1.5.2
+joblib==1.4.2
+plotly==5.24.1
+kaleido==0.2.1
+statsmodels==0.14.4
+weasyprint==62.3
+openai==1.55.3  
+httpx==0.28.0
