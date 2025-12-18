@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Risk Prediction</h1>
+<form method="post">
+    {% csrf_token %}
+    <label for="weather">Weather:</label>
+    <input type="text" id="weather" name="weather" required><br>
+    <label for="equipment_involved">Equipment Involved:</label>
+    <input type="text" id="equipment_involved" name="equipment_involved" required><br>
+    <button type="submit">Predict Severity</button>
+</form>
+{% if prediction %}
+    <p>Predicted Severity: {{ prediction }}</p>
+{% endif %}
+{% endblock %}
