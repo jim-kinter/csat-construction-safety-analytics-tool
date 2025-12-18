@@ -1,0 +1,55 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0" version="29.1.1">
+  <diagram name="CSAT Navigation Hierarchy" id="_0ahie4zAslvCuLMmw5T">
+    <mxGraphModel dx="3893" dy="1547" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="oxtySvUmoKGnyqvvm19p-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=14;fontStyle=1;fillColor=#2c3e50;strokeColor=#2c3e50;fontColor=#ffffff;shadow=1;" value="&lt;b&gt;Landing Page&lt;/b&gt;&lt;br&gt;/&lt;br&gt;&lt;i&gt;Public entry point&lt;/i&gt;" vertex="1">
+          <mxGeometry height="80" width="200" x="-510" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-2" parent="1" style="ellipse;whiteSpace=wrap;html=1;align=center;fontSize=12;fillColor=#e74c3c;strokeColor=#c0392b;fontColor=#ffffff;" value="&lt;b&gt;Login Required&lt;/b&gt;" vertex="1">
+          <mxGeometry height="50" width="80" x="-450" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=13;fillColor=#3498db;strokeColor=#2980b9;fontColor=#ffffff;" value="&lt;b&gt;Risk Assessment&lt;/b&gt;&lt;br&gt;/risk-assessment/" vertex="1">
+          <mxGeometry height="80" width="180" x="-930" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=13;fillColor=#9b59b6;strokeColor=#8e44ad;fontColor=#ffffff;" value="&lt;b&gt;Analytics Dashboard&lt;/b&gt;&lt;br&gt;/analytics/" vertex="1">
+          <mxGeometry height="80" width="180" x="-650" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=13;fillColor=#1abc9c;strokeColor=#16a085;fontColor=#ffffff;" value="&lt;b&gt;My Plans&lt;/b&gt;&lt;br&gt;/my-plans/" vertex="1">
+          <mxGeometry height="80" width="180" x="-370" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=13;fillColor=#34495e;strokeColor=#2c3e50;fontColor=#ffffff;" value="&lt;b&gt;Admin Console&lt;/b&gt;&lt;br&gt;/admin/" vertex="1">
+          <mxGeometry height="80" width="180" x="-240" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=11;fillColor=#ecf0f1;strokeColor=#bdc3c7;" value="Add Activity&lt;br&gt;→ Risk Prediction" vertex="1">
+          <mxGeometry height="70" width="180" x="-930" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=11;fillColor=#ecf0f1;strokeColor=#bdc3c7;" value="Save Plan&lt;br&gt;Load Plan&lt;br&gt;Export PDF" vertex="1">
+          <mxGeometry height="80" width="180" x="-370" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;fontSize=11;fillColor=#ecf0f1;strokeColor=#bdc3c7;" value="4-Tier Analytics&lt;br&gt;Filter by Plan" vertex="1">
+          <mxGeometry height="70" width="180" x="-650" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-10" edge="1" parent="1" style="endArrow=classic;html=1;strokeColor=#7f8c8d;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-11" edge="1" parent="1" style="endArrow=classic;html=1;strokeColor=#7f8c8d;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-12" edge="1" parent="1" style="endArrow=classic;html=1;strokeColor=#7f8c8d;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-13" edge="1" parent="1" style="endArrow=classic;html=1;strokeColor=#7f8c8d;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-14" edge="1" parent="1" style="endArrow=classic;html=1;strokeColor=#7f8c8d;" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oxtySvUmoKGnyqvvm19p-15" parent="1" style="text;html=1;align=center;fontSize=18;fontStyle=1" value="&lt;b&gt;CSAT Navigation Hierarchy&lt;/b&gt;&lt;br&gt;User Flow &amp; Authentication Gates" vertex="1">
+          <mxGeometry height="50" width="360" x="-550" y="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
