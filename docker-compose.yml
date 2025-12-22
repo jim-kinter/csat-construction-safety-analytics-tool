@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: csat_db
+      MYSQL_ROOT_PASSWORD: P1nkbunn13s  # Change to a secure password
+    ports:
+      - "3308:3306"  # Map to 3307 to avoid conflicts with local MySQL
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: csat_db
+      DATABASE_USER: root
+      DATABASE_PASSWORD: P1nkbunn13s
+      DATABASE_PORT: 3306
+    env_file:
+      - .env
+
+volumes:
+  db_data:
