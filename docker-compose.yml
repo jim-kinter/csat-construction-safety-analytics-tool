@@ -2,9 +2,8 @@ services:
   db:
     image: mysql:8.0
     restart: always
-    environment:
-      MYSQL_DATABASE: csat_db
-      MYSQL_ROOT_PASSWORD: P1nkbunn13s  # Change to a secure password
+    env_file:
+      - .env
     ports:
       - "3308:3306"  # Map to 3307 to avoid conflicts with local MySQL
     volumes:
@@ -24,12 +23,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DATABASE_HOST: db
-      DATABASE_NAME: csat_db
-      DATABASE_USER: root
-      DATABASE_PASSWORD: P1nkbunn13s
-      DATABASE_PORT: 3306
     env_file:
       - .env
 
