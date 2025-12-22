@@ -2,8 +2,6 @@
 
 ![CSAT Analytics Dashboard](/staticfiles/Dashboard.png)
 
-**Turning OSHA Data into Lives Saved**
-
 > **Every year, over 1,000 construction workers die in the United States.**  
 > Most of those deaths were **preventable**.
 
@@ -28,11 +26,11 @@ We can do better.
 
 CSAT is a full-stack Django web application that delivers **all four levels of analytics** in one unified tool:
 
-| Level         | Question Answered               | CSAT Feature                              |
-|---------------|---------------------------------|-------------------------------------------|
-| **Descriptive**  | What happened?                  | Interactive timeline of every incident    |
-| **Diagnostic**   | Why did it happen?              | Weather × Severity heatmaps               |
-| **Predictive**   | What will happen next?          | 12-month risk forecast by equipment group|
+| Level            | Question Answered               | CSAT Feature                                                   |
+|------------------|---------------------------------|----------------------------------------------------------------|
+| **Descriptive**  | What happened?                  | Interactive timeline of every incident                         |
+| **Diagnostic**   | Why did it happen?              | Weather × Severity heatmaps                                    |
+| **Predictive**   | What will happen next?          | 12-month risk forecast by equipment group                      |
 | **Prescriptive** | What should we do to stop it?   | **AI-generated**, specific mitigation recommendations (GPT-4o) |
 
 No generic posters.  
@@ -77,11 +75,11 @@ In construction, **one mistake = one life**. CSAT bridges the gap between data o
 
 #### Data Sources & Limitations
 
-| Dataset                          | Years     | Source                     | Contains Fatalities? | Notes |
-|----------------------------------|-----------|----------------------------|-----------------------|-------|
-| OSHA Injury Tracking (ITA)       | 2016–2021 | osha.gov                   | No                    | Aggregate counts only |
-| OSHA Severe Injury Reports (SIR) | 2015–2018 | osha.gov                   | Yes                   | Individual fatal events |
-| Combined                         | 2015–2021 | Merged in this project     | Yes (2015–2018 only)  | **Known limitation**: No public individual fatalities after 2018 due to OSHA policy change |
+| Dataset                          | Years     | Source                     | Contains Fatalities?  | Notes                                                                                      |
+|----------------------------------|-----------|----------------------------|-----------------------|-------------------------------------------------------------------------------------------|
+| OSHA Injury Tracking (ITA)       | 2016–2021 | osha.gov                   | No                    | Aggregate counts only                                                                                       |
+| OSHA Severe Injury Reports (SIR) | 2015–2018 | osha.gov                   | Yes                   | Individual fatal events                                                                                     |
+| Combined                         | 2015–2021 | Merged in this project     | Yes (2015–2018 only)  | **Known limitation**: No public individual fatalities after 2018 due to OSHA policy change                                                                                     |
 
 **Important Reality**: You’ll notice all fatalities stop around 2018.  
 This is **not a bug** — it’s a **regulatory change**. OSHA stopped releasing individual fatal incidents publicly after 2018.  
