@@ -75,11 +75,11 @@ In construction, **one mistake = one life**. CSAT bridges the gap between data o
 
 #### Data Sources & Limitations
 
-| Dataset                          | Years     | Source                     | Contains Fatalities?  | Notes                                                                                      |
-|----------------------------------|-----------|----------------------------|-----------------------|-------------------------------------------------------------------------------------------|
-| OSHA Injury Tracking (ITA)       | 2016–2021 | osha.gov                   | No                    | Aggregate counts only                                                                                       |
-| OSHA Severe Injury Reports (SIR) | 2015–2018 | osha.gov                   | Yes                   | Individual fatal events                                                                                     |
-| Combined                         | 2015–2021 | Merged in this project     | Yes (2015–2018 only)  | **Known limitation**: No public individual fatalities after 2018 due to OSHA policy change                                                                                     |
+| Dataset                         | Years     | Source                | Contains Fatalities? | Notes                                                                                     |
+|---------------------------------|-----------|-----------------------|----------------------|-------------------------------------------------------------------------------------------|
+| OSHA Injury Tracking (ITA)      | 2016–2021 | osha.gov              | No                   | Aggregate counts only                                                                     |
+| OSHA Severe Injury Reports (SIR)| 2015–2018 | osha.gov              | Yes                  | Individual fatal events                                                                   |
+| Combined                        | 2015–2021 | Merged in this project| Yes (2015–2018 only) | **Known limitation**: No public individual fatalities after 2018 due to OSHA policy change|
 
 **Important Reality**: You’ll notice all fatalities stop around 2018.  
 This is **not a bug** — it’s a **regulatory change**. OSHA stopped releasing individual fatal incidents publicly after 2018.  
