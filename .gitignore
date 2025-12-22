@@ -10,3 +10,4 @@ pip-log.txt
 pip-delete-this-directory.txt
 *.csat_env
 *.csv
+.yml
