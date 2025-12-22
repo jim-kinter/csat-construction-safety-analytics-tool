@@ -2,222 +2,159 @@ import sys
 import os
 import django
 
-# Set up Django environment (run from root)
+# Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'csat_project.settings')
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # Add root to path if needed
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 django.setup()
 
 import pandas as pd
 from sqlalchemy import create_engine
-from csat_app.models import Incident, Location, IncidentType #,Employee,  IncidentEmployee
+from csat_app.models import Incident, Location, IncidentType
 from faker import Faker
-from datetime import datetime
 import random
 from django.utils import timezone
-from django.db import transaction
-import math
 from tqdm import tqdm
 import numpy as np
-
 import pathlib
 import urllib.request
 
-OSHA_INJURY_DATA_FILE = pathlib.Path('/app/osha_injury_2016_2021.csv')
-OSHA_SIR_DATA_FILE = pathlib.Path('/app/osha_sir.csv')
+# Paths for all three datasets
+OSHA_INJURY_FILE = pathlib.Path('/app/osha_injury_2016_2021.csv')
+OSHA_SIR_FILE = pathlib.Path('/app/osha_sir.csv')
+OSHA_ABSTRACTS_FILE = pathlib.Path('/app/osha_abstracts_2015_2017.csv')
 
-if OSHA_INJURY_DATA_FILE.exists():
-    size_mb = OSHA_INJURY_DATA_FILE.stat().st_size / (1024 * 1024)
-    print(f"OSHA Injury dataset found ({size_mb:.1f} MB)")
-else:
-    print("OSHA Injury dataset not found — downloading (~390 MB) from GitHub release...")
-    url = "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_injury_2016_2021.csv"
-
-    # Add a real browser User-Agent to bypass GitHub's bot protection
+# Auto-download helper with browser user-agent
+def download_file(url, dest_path):
+    print(f"Downloading {dest_path.name} (~{dest_path.stat().st_size / (1024*1024) if dest_path.exists() else 'unknown'} MB)...")
     opener = urllib.request.build_opener()
-    opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')]
+    opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')]
     urllib.request.install_opener(opener)
-
-    urllib.request.urlretrieve(url, OSHA_INJURY_DATA_FILE)
+    urllib.request.urlretrieve(url, dest_path)
     print("Download complete!")
 
-if OSHA_SIR_DATA_FILE.exists():
-    size_mb = OSHA_SIR_DATA_FILE.stat().st_size / (1024 * 1024)
-    print(f"OSHA SIR dataset found ({size_mb:.1f} MB)")
+# Download all three if missing
+if OSHA_INJURY_FILE.exists():
+    print(f"OSHA Injury dataset found ({OSHA_INJURY_FILE.stat().st_size / (1024*1024):.1f} MB)")
 else:
-    print("OSHA SIR dataset not found — downloading (~50 MB) from GitHub release...")
-    url = "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_sir.csv"
+    download_file("https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_injury_2016_2021.csv", OSHA_INJURY_FILE)
 
-    # Add a real browser User-Agent to bypass GitHub's bot protection
-    opener = urllib.request.build_opener()
-    opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')]
-    urllib.request.install_opener(opener)
+if OSHA_SIR_FILE.exists():
+    print(f"OSHA SIR dataset found ({OSHA_SIR_FILE.stat().st_size / (1024*1024):.1f} MB)")
+else:
+    download_file("https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_sir.csv", OSHA_SIR_FILE)
 
-    urllib.request.urlretrieve(url, OSHA_SIR_DATA_FILE)
-    print("Download complete!")  
+if OSHA_ABSTRACTS_FILE.exists():
+    print(f"OSHA Abstracts dataset found ({OSHA_ABSTRACTS_FILE.stat().st_size / (1024*1024):.1f} MB)")
+else:
+    download_file("https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_abstracts_2015_2017.csv", OSHA_ABSTRACTS_FILE)
 
-# Clear all existing records from the database
+# Clear database
 def clear_database():
-    #IncidentEmployee.objects.all().delete()
     Incident.objects.all().delete()
     IncidentType.objects.all().delete()
-    #Employee.objects.all().delete()
     Location.objects.all().delete()
-    print("Cleared all existing records from the database.")
-
-# Create SQLAlchemy engine
-engine = create_engine('mysql+pymysql://root:P1nkbunn13s@db:3306/csat_db')
-
-# Make datetime timezone-aware, handling NaT
-def make_aware(dt):
-    if pd.isna(dt):
-        return timezone.now()  # Default to current time for NaT
-    if not timezone.is_aware(dt):
-        return timezone.make_aware(dt)
-    return dt
+    print("Cleared existing records.")
 
 clear_database()
 
-# Load osha_injury_2016_2021.csv (File 1) directly to Incident table
-file_path = '/app/osha_injury_2016_2021.csv'
-print("Loading OSHA injury dataset...")
-try:
-    df_injury = pd.read_csv(file_path, low_memory=False, encoding='utf-8')
-except UnicodeDecodeError:
-    print("UTF-8 failed — trying Windows-1252 (common with OSHA files)...")
-    df_injury = pd.read_csv(file_path, low_memory=False, encoding='cp1252')
-except Exception as e:
-    print(f"CSV load failed: {e}")
+# Robust CSV loader with multiple encoding attempts
+def load_csv_safely(file_path, name):
+    print(f"Loading {name}...")
+    encodings = ['utf-8', 'cp1252', 'iso-8859-1', 'latin1', 'windows-1252']
+    for enc in encodings:
+        try:
+            df = pd.read_csv(file_path, low_memory=False, encoding=enc)
+            print(f"Success with {enc} encoding — {len(df):,} rows")
+            return df
+        except UnicodeDecodeError:
+            continue
+    print(f"Failed to load {name} with any encoding")
     sys.exit(1)
 
-print(f"Processing osha_injury_2016_2021.csv - Total rows: {len(df_injury)}")
+# Load all three datasets
+df_injury = load_csv_safely(OSHA_INJURY_FILE, "OSHA Injury")
+df_sir = load_csv_safely(OSHA_SIR_FILE, "OSHA SIR")
+df_abstracts = load_csv_safely(OSHA_ABSTRACTS_FILE, "OSHA Abstracts")
 
-# Map columns to Incident model fields (dummy for FKs, handle NaN)
-df_injury['date'] = pd.to_datetime(df_injury['created_timestamp'], errors='coerce').apply(make_aware)
-df_injury['description'] = "Total injuries: " + df_injury['total_injuries'].fillna(0).astype(str) + ", Deaths: " + df_injury['total_deaths'].fillna(0).astype(str) + ", Illnesses: " + df_injury['total_other_illnesses'].fillna(0).astype(str)
-df_injury['severity'] = np.where(df_injury['total_deaths'].fillna(0) > 0, 'High', np.where(df_injury['total_injuries'].fillna(0) > 0, 'Medium', 'Low'))
-df_injury['cause'] = "DAFW cases: " + df_injury['total_dafw_cases'].fillna(0).astype(str) + ", DJTR cases: " + df_injury['total_djtr_cases'].fillna(0).astype(str)
-df_injury['outcome'] = "DAFW days: " + df_injury['total_dafw_days'].fillna(0).astype(str) + ", DJTR days: " + df_injury['total_djtr_days'].fillna(0).astype(str)
-df_injury['location_id'] = None
-df_injury['type_id'] = None
+# Process Injury data
+print("Processing injury data...")
+df_injury['date'] = pd.to_datetime(df_injury.get('created_timestamp', pd.Series()), errors='coerce').apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now())
+df_injury['description'] = "Injuries: " + df_injury.get('total_injuries', 0).fillna(0).astype(str) + " | Deaths: " + df_injury.get('total_deaths', 0).fillna(0).astype(str)
+df_injury['severity'] = np.where(df_injury.get('total_deaths', 0).fillna(0) > 0, 'High', np.where(df_injury.get('total_injuries', 0).fillna(0) > 0, 'Medium', 'Low'))
+df_injury['equipment_involved'] = 'Unknown'
 
-# Select and rename columns to match Incident model (add other fields as null if needed)
-df_injury_incident = df_injury[['date', 'description', 'severity', 'cause', 'outcome', 'location_id', 'type_id']]
-
-# Load in batches with progress (chunksize for to_sql)
-batch_size = 10000  # Larger for speed
-total_batches = math.ceil(len(df_injury_incident) / batch_size)
-for batch_num in tqdm(range(total_batches), desc="Processing batches"):
-    start = batch_num * batch_size
-    end = start + batch_size
-    batch_df = df_injury_incident.iloc[start:end]
-    batch_df.to_sql('csat_app_incident', con=engine, if_exists='append', index=False)
-
-print("Loaded osha_injury_2016_2021 data.")
-
-# Load osha_sir.csv (File 2) directly to Incident table
-file_path = '/app/osha_sir.csv'
-print("Loading OSHA SIR dataset...")
-try:
-    df_sir = pd.read_csv(file_path, low_memory=False, encoding='utf-8')
-except UnicodeDecodeError:
-    print("UTF-8 failed — trying Windows-1252 (common with OSHA files)...")
-    df_sir = pd.read_csv(file_path, low_memory=False, encoding='cp1252')
-except Exception as e:
-    print(f"CSV load failed: {e}")
-    sys.exit(1)
-
-print(f"Processing osha_sir.csv - Total rows: {len(df_sir)}")
-
-# Map columns to Incident model fields
-df_sir['date'] = pd.to_datetime(df_sir['EventDate'], format='%m/%d/%Y', errors='coerce').apply(make_aware)
-df_sir['description'] = df_sir['Final Narrative'].fillna('')
-df_sir['severity'] = np.where((df_sir['Hospitalized'].fillna(0) > 0) | (df_sir['Amputation'].fillna(0) > 0) | (df_sir['Loss of Eye'].fillna(0) > 0), 'High', 'Medium')
-df_sir['equipment_involved'] = df_sir['Secondary Source Title'].fillna(df_sir['SourceTitle'].fillna('None'))
-df_sir['cause'] = df_sir['EventTitle'].fillna('')
-df_sir['outcome'] = df_sir['Part of Body Title'].fillna('')
-df_sir['location_id'] = None
-df_sir['type_id'] = None
-
-df_sir_incident = df_sir[['date', 'description', 'severity', 'equipment_involved', 'cause', 'outcome', 'location_id', 'type_id']]
-
-# Load in batches with progress
-batch_size = 10000
-total_batches = math.ceil(len(df_sir_incident) / batch_size)
-for batch_num in tqdm(range(total_batches), desc="Processing batches"):
-    start = batch_num * batch_size
-    end = start + batch_size
-    batch_df = df_sir_incident.iloc[start:end]
-    batch_df.to_sql('csat_app_incident', con=engine, if_exists='append', index=False)
-
-print("Loaded osha_sir data.")
-
-# Load osha_abstracts_2015_2017.csv (File 3) directly to Incident table
-file_path = '/app/osha_abstracts_2015_2017.csv'
-print("Loading OSHA Abstracts dataset...")
-try:
-    df_abstracts = pd.read_csv(file_path, low_memory=False, encoding='utf-8')
-except UnicodeDecodeError:
-    print("UTF-8 failed — trying Windows-1252 (common with OSHA files)...")
-    df_abstracts = pd.read_csv(file_path, low_memory=False, encoding='cp1252')
-except Exception as e:
-    print(f"CSV load failed: {e}")
-    sys.exit(1)
-
-print(f"Processing osha_abstracts_2015_2017.csv - Total rows: {len(df_abstracts)}")
-
-# Map columns to Incident model fields
-df_abstracts['date'] = pd.to_datetime(df_abstracts['Event Date'], format='%m/%d/%Y', errors='coerce').apply(make_aware)
-df_abstracts['description'] = df_abstracts['Abstract Text'].fillna('')
-df_abstracts['severity'] = df_abstracts['Degree of Injury'].fillna('Medium')
-df_abstracts['equipment_involved'] = df_abstracts['hazsub'].fillna('None')
-df_abstracts['cause'] = df_abstracts['evn_factor'].fillna('')
-df_abstracts['outcome'] = df_abstracts['Part of Body'].fillna('')
-df_abstracts['location_id'] = None
-df_abstracts['type_id'] = None
-
-df_abstracts_incident = df_abstracts[['date', 'description', 'severity', 'equipment_involved', 'cause', 'outcome', 'location_id', 'type_id']]
-
-# Load in batches with progress
-batch_size = 10000
-total_batches = math.ceil(len(df_abstracts_incident) / batch_size)
-for batch_num in tqdm(range(total_batches), desc="Processing batches"):
-    start = batch_num * batch_size
-    end = start + batch_size
-    batch_df = df_abstracts_incident.iloc[start:end]
-    batch_df.to_sql('csat_app_incident', con=engine, if_exists='append', index=False)
-
-print("Loaded osha_abstracts_2015_2017 data.")
-
-# Generate simulated data (50000 records representing industrial construction incidents)
-fake = Faker()
-incident_types_list = ['Falls', 'Hand Injury', 'Rigging Failure', 'Equipment Failure', 'Weld Failure', 'Confined Space Hazard', 'Chemical Exposure', 'Arc Flash', 'Missing Barricades', 'LOTO Failure', 'Spotting Failure', 'Human-Machine Interface Conflict']
-total_simulated = 50000
-print(f"Generating simulated data - Total records: {total_simulated}")
-
-for i in tqdm(range(total_simulated), desc="Generating records"):
-    location = Location.objects.create(name=fake.city(), address=fake.address(), site_manager=fake.name())
-
-    incident_type_name = random.choice(incident_types_list)
-    incident_type = IncidentType.objects.create(
-        name=incident_type_name,
-        description=fake.sentence(nb_words=10) + f" related to {incident_type_name.lower()} in industrial construction."
-    )
-
-    incident = Incident.objects.create(
-        date=make_aware(fake.date_time_this_decade()),
-        time=fake.time(),
-        description=fake.paragraph(nb_sentences=3) + f" This incident involved {incident_type_name.lower()} typical in industrial construction sites.",
-        severity=random.choice(['Low', 'Medium', 'High']),
-        weather=random.choice(['Clear', 'Rainy', 'Windy', 'Foggy', 'Hot', 'Cold']),
-        equipment_involved=random.choice(['Crane', 'Welder', 'Rigging Gear', 'Scaffold', 'Tank/Vessel', 'Electrical Panel', 'Barricade', 'Lockout Device', 'Vehicle', 'Dozer', 'Grader', 'Dump Truck', 'Excavator', 'H2S Detector', 'Spotter Equipment']),
-        cause=fake.sentence(nb_words=8) + f" leading to {incident_type_name.lower()}.",
-        outcome=fake.sentence(nb_words=6) + f" with outcome from {incident_type_name.lower()}.",
+incidents = []
+for _, row in tqdm(df_injury.iterrows(), total=len(df_injury), desc="Injury incidents"):
+    location = Location.objects.create(name="Unknown", address="N/A", site_manager="N/A")
+    itype = IncidentType.objects.create(name="General Injury", description="OSHA reported")
+    incidents.append(Incident(
+        date=row['date'],
+        description=row['description'],
+        severity=row['severity'],
+        equipment_involved=row['equipment_involved'],
         location=location,
-        type=incident_type
+        type=itype
+    ))
+Incident.objects.bulk_create(incidents)
+
+# Process SIR data
+print("Processing SIR data...")
+df_sir['date'] = pd.to_datetime(df_sir.get('EventDate', pd.Series()), format='%m/%d/%Y', errors='coerce').apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now())
+df_sir['description'] = df_sir.get('Final Narrative', '').fillna('No narrative')
+df_sir['severity'] = np.where((df_sir.get('Hospitalized', 0) > 0) | (df_sir.get('Amputation', 0) > 0), 'High', 'Medium')
+df_sir['equipment_involved'] = df_sir.get('Secondary Source Title', df_sir.get('SourceTitle', 'None')).fillna('None')
+
+incidents = []
+for _, row in tqdm(df_sir.iterrows(), total=len(df_sir), desc="SIR incidents"):
+    location = Location.objects.create(name="Unknown", address="N/A", site_manager="N/A")
+    itype = IncidentType.objects.create(name=row.get('EventTitle', 'Unknown'), description="SIR reported")
+    incidents.append(Incident(
+        date=row['date'],
+        description=row['description'],
+        severity=row['severity'],
+        equipment_involved=row['equipment_involved'],
+        location=location,
+        type=itype
+    ))
+Incident.objects.bulk_create(incidents)
+
+# Process Abstracts data
+print("Processing Abstracts data...")
+df_abstracts['date'] = pd.to_datetime(df_abstracts.get('Event Date', pd.Series()), format='%m/%d/%Y', errors='coerce').apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now())
+df_abstracts['description'] = df_abstracts.get('Abstract Text', '').fillna('No abstract')
+df_abstracts['severity'] = df_abstracts.get('Degree of Injury', 'Medium').fillna('Medium')
+df_abstracts['equipment_involved'] = df_abstracts.get('hazsub', 'None').fillna('None')
+
+incidents = []
+for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Abstracts incidents"):
+    location = Location.objects.create(name="Unknown", address="N/A", site_manager="N/A")
+    itype = IncidentType.objects.create(name="Abstract Incident", description="OSHA abstracts")
+    incidents.append(Incident(
+        date=row['date'],
+        description=row['description'],
+        severity=row['severity'],
+        equipment_involved=row['equipment_involved'],
+        location=location,
+        type=itype
+    ))
+Incident.objects.bulk_create(incidents)
+
+# Optional simulated data
+print("Generating 10K simulated incidents for additional volume...")
+fake = Faker()
+types = ['Falls', 'Struck By', 'Caught In', 'Electrical', 'Chemical']
+for i in tqdm(range(50000), desc="Simulated"):
+    location = Location.objects.create(name=fake.city(), address=fake.address(), site_manager=fake.name())
+    itype_name = random.choice(types)
+    itype = IncidentType.objects.create(name=itype_name, description=f"Simulated {itype_name.lower()}")
+    Incident.objects.create(
+        date=timezone.make_aware(fake.date_time_this_decade()),
+        description=fake.paragraph(nb_sentences=3),
+        severity=random.choice(['Low', 'Medium', 'High']),
+        weather=random.choice(['Clear', 'Rainy', 'Hot', 'Cold']),
+        equipment_involved=random.choice(['Crane', 'Scaffold', 'Welder', 'Ladder']),
+        location=location,
+        type=itype
     )
 
-    #employee = Employee.objects.create(name=fake.name(), role=random.choice(['Welder', 'Rigger', 'Operator', 'Electrician', 'Laborer', 'Supervisor', 'Spotter', 'LOTO Technician']), experience_years=random.randint(1, 30))
-
-    #IncidentEmployee.objects.create(incident=incident, employee=employee)
-
-print("Loaded simulated data.")
+print("All data loaded successfully!")
