@@ -26,7 +26,7 @@ print("Training predictive model on all incident data...")
 # Only use consistent sources for training
 incidents = Incident.objects.filter(data_source__in=['injury', 'sir']).values(
     'weather', 'equipment_involved', 'severity', 'date'
-)
+)  # if using your own internal data source(s), be sure to add it/them to the .filter(... or it/they won't be included in the model
 if not incidents:
     print("No real incidents found — using simulated data for training")
     fake = Faker()
