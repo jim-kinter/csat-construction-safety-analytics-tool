@@ -13,3 +13,4 @@ statsmodels==0.14.4
 weasyprint==62.3
 openai==1.55.3  
 httpx==0.28.0
+xgboost==2.1.1

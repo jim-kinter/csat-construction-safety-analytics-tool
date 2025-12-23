@@ -17,15 +17,16 @@ from tqdm import tqdm
 import numpy as np
 import pathlib
 import urllib.request
+from django.db import connection
 
 # Paths for all three datasets
-OSHA_INJURY_FILE = pathlib.Path('/app/osha_injury_2016_2021.csv')
-OSHA_SIR_FILE = pathlib.Path('/app/osha_sir.csv')
-OSHA_ABSTRACTS_FILE = pathlib.Path('/app/osha_abstracts_2015_2017.csv')
+INJURY_FILE = pathlib.Path('/app/osha_injury_2016_2021.csv')
+SIR_FILE = pathlib.Path('/app/osha_sir.csv')
+ABSTRACTS_FILE = pathlib.Path('/app/osha_abstracts_2015_2017.csv')
 
 # Auto-download helper with browser user-agent
 def download_file(url, dest_path):
-    print(f"Downloading {dest_path.name} (~{dest_path.stat().st_size / (1024*1024) if dest_path.exists() else 'unknown'} MB)...")
+    print(f"Downloading {dest_path.name} (~unknown MB)...")
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')]
     urllib.request.install_opener(opener)
@@ -33,20 +34,15 @@ def download_file(url, dest_path):
     print("Download complete!")
 
 # Download all three if missing
-if OSHA_INJURY_FILE.exists():
-    print(f"OSHA Injury dataset found ({OSHA_INJURY_FILE.stat().st_size / (1024*1024):.1f} MB)")
-else:
-    download_file("https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_injury_2016_2021.csv", OSHA_INJURY_FILE)
-
-if OSHA_SIR_FILE.exists():
-    print(f"OSHA SIR dataset found ({OSHA_SIR_FILE.stat().st_size / (1024*1024):.1f} MB)")
-else:
-    download_file("https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_sir.csv", OSHA_SIR_FILE)
-
-if OSHA_ABSTRACTS_FILE.exists():
-    print(f"OSHA Abstracts dataset found ({OSHA_ABSTRACTS_FILE.stat().st_size / (1024*1024):.1f} MB)")
-else:
-    download_file("https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_abstracts_2015_2017.csv", OSHA_ABSTRACTS_FILE)
+for file_path, url in [
+    (INJURY_FILE, "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_injury_2016_2021.csv"),
+    (SIR_FILE, "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_sir.csv"),
+    (ABSTRACTS_FILE, "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_abstracts_2015_2017.csv")
+]:
+    if file_path.exists():
+        print(f"{file_path.name} found ({file_path.stat().st_size / (1024*1024):.1f} MB)")
+    else:
+        download_file(url, file_path)
 
 # Clear database
 def clear_database():
@@ -57,24 +53,37 @@ def clear_database():
 
 clear_database()
 
-# Robust CSV loader with multiple encoding attempts
+# Robust CSV loader
 def load_csv_safely(file_path, name):
     print(f"Loading {name}...")
     encodings = ['utf-8', 'cp1252', 'iso-8859-1', 'latin1', 'windows-1252']
     for enc in encodings:
         try:
             df = pd.read_csv(file_path, low_memory=False, encoding=enc)
-            print(f"Success with {enc} encoding — {len(df):,} rows")
+            print(f"Loaded {len(df):,} rows with {enc} encoding")
             return df
         except UnicodeDecodeError:
             continue
     print(f"Failed to load {name} with any encoding")
     sys.exit(1)
 
-# Load all three datasets
-df_injury = load_csv_safely(OSHA_INJURY_FILE, "OSHA Injury")
-df_sir = load_csv_safely(OSHA_SIR_FILE, "OSHA SIR")
-df_abstracts = load_csv_safely(OSHA_ABSTRACTS_FILE, "OSHA Abstracts")
+# Load all datasets
+df_injury = load_csv_safely(INJURY_FILE, "OSHA Injury")
+df_sir = load_csv_safely(SIR_FILE, "OSHA SIR")
+df_abstracts = load_csv_safely(ABSTRACTS_FILE, "OSHA Abstracts")
+
+# Reconnect helper
+def reconnect_db():
+    connection.close()
+    connection.connect()
+
+# Batch bulk_create helper
+def batch_create(model_class, objects, batch_size=10000):
+    for i in range(0, len(objects), batch_size):
+        reconnect_db()
+        batch = objects[i:i + batch_size]
+        model_class.objects.bulk_create(batch)
+        print(f"Inserted {len(batch)} records")
 
 # Process Injury data
 print("Processing injury data...")
@@ -95,7 +104,8 @@ for _, row in tqdm(df_injury.iterrows(), total=len(df_injury), desc="Injury inci
         location=location,
         type=itype
     ))
-Incident.objects.bulk_create(incidents)
+
+batch_create(Incident, incidents)
 
 # Process SIR data
 print("Processing SIR data...")
@@ -116,7 +126,8 @@ for _, row in tqdm(df_sir.iterrows(), total=len(df_sir), desc="SIR incidents"):
         location=location,
         type=itype
     ))
-Incident.objects.bulk_create(incidents)
+
+batch_create(Incident, incidents)
 
 # Process Abstracts data
 print("Processing Abstracts data...")
@@ -137,13 +148,14 @@ for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Abstr
         location=location,
         type=itype
     ))
-Incident.objects.bulk_create(incidents)
+
+batch_create(Incident, incidents)
 
 # Optional simulated data
-print("Generating 10K simulated incidents for additional volume...")
+print("Generating 10K simulated incidents...")
 fake = Faker()
 types = ['Falls', 'Struck By', 'Caught In', 'Electrical', 'Chemical']
-for i in tqdm(range(50000), desc="Simulated"):
+for i in tqdm(range(10000), desc="Simulated"):
     location = Location.objects.create(name=fake.city(), address=fake.address(), site_manager=fake.name())
     itype_name = random.choice(types)
     itype = IncidentType.objects.create(name=itype_name, description=f"Simulated {itype_name.lower()}")
