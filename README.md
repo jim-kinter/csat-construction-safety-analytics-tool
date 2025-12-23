@@ -144,7 +144,7 @@ echo "OPENAI_API_KEY=sk-..." > .env
 docker compose up -d --build
 # Load data (first time only)
 docker compose exec web python manage.py migrate
-docker compose exec web python csat_app/load_data.py
+docker compose exec web python csat_app/load_data.py #This is a long-running process
 docker compose exec web python csat_app/predict_risk.py
 docker compose exec web python manage.py createsuperuser
 # Rebuild and run
