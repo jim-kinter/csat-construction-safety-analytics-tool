@@ -97,6 +97,8 @@ CSAT correctly reflects this — and highlights a real-world challenge in safety
 - **PDF**: WeasyPrint (branded reports)  
 - **Deployment**: Docker Compose (fully containerized)
 
+The solution runs as a localized web service by default and is only accessible via the localhost on port 8000. This could easily be adapted to allow access on a LAN or even from the Internet (be sure to implement and configure SSL). By default the Docker container is monolithic (in other words the web server and database server are co-resident in the same image) but this was really because the genesis of the project was around the concept of making this easy to deploy for field teams in order to help save lives.
+
 ---
 
 #### Why This Matters

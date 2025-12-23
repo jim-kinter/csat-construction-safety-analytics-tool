@@ -155,8 +155,10 @@ for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Abstr
 batch_create(Incident, incidents)
 
 # Optional simulated data - EPCs or other users would modify this section with a pull from their own actual historical data. 
-# The data needs to carry as many of the attributes listed below as possible. Also, the data_source value should be updated 
-# to indicate the name of the dataset, something like "internal_incident_data"
+# The data needs to carry as many of the attributes listed below (date, description, severity, weather, equipment_involved, location,
+# type) as possible. Note that weather, equipment, severity, date, month, and state are really vital to the risk model. Also, the 
+# data_source value should be updated to indicate the name of the dataset, something like "internal_incident_data". Implementers should review
+# the OSHA injury data and try to make internal data look as similar as possible. I've tried to implement some error handling, but GIGO.
 print("Generating 10K simulated incidents...")
 fake = Faker()
 types = ['Falls', 'Struck By', 'Caught In', 'Electrical', 'Chemical']
