@@ -87,10 +87,16 @@ def batch_create(model_class, objects, batch_size=10000):
 
 # Process Injury data
 print("Processing injury data...")
-df_injury['date'] = pd.to_datetime(df_injury.get('created_timestamp', pd.Series()), errors='coerce').apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now())
-df_injury['description'] = "Injuries: " + df_injury.get('total_injuries', 0).fillna(0).astype(str) + " | Deaths: " + df_injury.get('total_deaths', 0).fillna(0).astype(str)
-df_injury['severity'] = np.where(df_injury.get('total_deaths', 0).fillna(0) > 0, 'High', np.where(df_injury.get('total_injuries', 0).fillna(0) > 0, 'Medium', 'Low'))
-df_injury['equipment_involved'] = 'Unknown'
+# Safe, future-proof assignments — no chained assignment warnings
+df_injury = df_injury.assign(
+    date = pd.to_datetime(df_injury.get('created_timestamp', pd.Series()), errors='coerce')
+        .apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now()),
+    description = "Injuries: " + df_injury.get('total_injuries', 0).fillna(0).astype(str) + 
+                  " | Deaths: " + df_injury.get('total_deaths', 0).fillna(0).astype(str),
+    severity = np.where(df_injury.get('total_deaths', 0).fillna(0) > 0, 'High', 
+                        np.where(df_injury.get('total_injuries', 0).fillna(0) > 0, 'Medium', 'Low')),
+    equipment_involved = 'Unknown'
+)
 
 incidents = []
 for _, row in tqdm(df_injury.iterrows(), total=len(df_injury), desc="Injury incidents"):
@@ -110,10 +116,13 @@ batch_create(Incident, incidents)
 
 # Process SIR data
 print("Processing SIR data...")
-df_sir['date'] = pd.to_datetime(df_sir.get('EventDate', pd.Series()), format='%m/%d/%Y', errors='coerce').apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now())
-df_sir['description'] = df_sir.get('Final Narrative', '').fillna('No narrative')
-df_sir['severity'] = np.where((df_sir.get('Hospitalized', 0) > 0) | (df_sir.get('Amputation', 0) > 0), 'High', 'Medium')
-df_sir['equipment_involved'] = df_sir.get('Secondary Source Title', df_sir.get('SourceTitle', 'None')).fillna('None')
+df_sir = df_sir.assign(
+    date = pd.to_datetime(df_sir.get('EventDate', pd.Series()), format='%m/%d/%Y', errors='coerce')
+        .apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now()),
+    description = df_sir.get('Final Narrative', '').fillna('No narrative'),
+    severity = np.where((df_sir.get('Hospitalized', 0) > 0) | (df_sir.get('Amputation', 0) > 0), 'High', 'Medium'),
+    equipment_involved = df_sir.get('Secondary Source Title', df_sir.get('SourceTitle', 'None')).fillna('None')
+)
 
 incidents = []
 for _, row in tqdm(df_sir.iterrows(), total=len(df_sir), desc="SIR incidents"):
@@ -133,10 +142,13 @@ batch_create(Incident, incidents)
 
 # Process Abstracts data
 print("Processing Abstracts data...")
-df_abstracts['date'] = pd.to_datetime(df_abstracts.get('Event Date', pd.Series()), format='%m/%d/%Y', errors='coerce').apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now())
-df_abstracts['description'] = df_abstracts.get('Abstract Text', '').fillna('No abstract')
-df_abstracts['severity'] = df_abstracts.get('Degree of Injury', 'Medium').fillna('Medium')
-df_abstracts['equipment_involved'] = df_abstracts.get('hazsub', 'None').fillna('None')
+df_abstracts = df_abstracts.assign(
+    date = pd.to_datetime(df_abstracts.get('Event Date', pd.Series()), format='%m/%d/%Y', errors='coerce')
+        .apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now()),
+    description = df_abstracts.get('Abstract Text', '').fillna('No abstract'),
+    severity = df_abstracts.get('Degree of Injury', 'Medium').fillna('Medium'),
+    equipment_involved = df_abstracts.get('hazsub', 'None').fillna('None')
+)
 
 incidents = []
 for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Abstracts incidents"):
