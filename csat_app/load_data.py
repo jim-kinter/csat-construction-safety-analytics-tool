@@ -155,7 +155,8 @@ for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Abstr
 batch_create(Incident, incidents)
 
 # Optional simulated data - EPCs or other users would modify this section with a pull from their own actual historical data. 
-# The data needs to carry as many of the attributes listed below as possible. Also, the data_source value should be updated to indicate the name of the dataset, something like "internal_incident_data"
+# The data needs to carry as many of the attributes listed below as possible. Also, the data_source value should be updated 
+# to indicate the name of the dataset, something like "internal_incident_data"
 print("Generating 10K simulated incidents...")
 fake = Faker()
 types = ['Falls', 'Struck By', 'Caught In', 'Electrical', 'Chemical']
