@@ -8,7 +8,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 django.setup()
 
 import pandas as pd
-from sqlalchemy import create_engine
 from csat_app.models import Incident, Location, IncidentType
 from faker import Faker
 import random
@@ -19,21 +18,21 @@ import pathlib
 import urllib.request
 from django.db import connection
 
-# Paths for all three datasets
+# Paths
 INJURY_FILE = pathlib.Path('/app/osha_injury_2016_2021.csv')
 SIR_FILE = pathlib.Path('/app/osha_sir.csv')
 ABSTRACTS_FILE = pathlib.Path('/app/osha_abstracts_2015_2017.csv')
 
-# Auto-download helper with browser user-agent
+# Download helper
 def download_file(url, dest_path):
-    print(f"Downloading {dest_path.name} (~unknown MB)...")
+    print(f"Downloading {dest_path.name}...")
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')]
     urllib.request.install_opener(opener)
     urllib.request.urlretrieve(url, dest_path)
     print("Download complete!")
 
-# Download all three if missing
+# Download if missing
 for file_path, url in [
     (INJURY_FILE, "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_injury_2016_2021.csv"),
     (SIR_FILE, "https://github.com/jim-kinter/csat-construction-safety-analytics-tool/releases/download/v1.0/osha_sir.csv"),
@@ -44,7 +43,7 @@ for file_path, url in [
     else:
         download_file(url, file_path)
 
-# Clear database
+# Clear DB
 def clear_database():
     Incident.objects.all().delete()
     IncidentType.objects.all().delete()
@@ -53,7 +52,7 @@ def clear_database():
 
 clear_database()
 
-# Robust CSV loader
+# Safe CSV loader
 def load_csv_safely(file_path, name):
     print(f"Loading {name}...")
     encodings = ['utf-8', 'cp1252', 'iso-8859-1', 'latin1', 'windows-1252']
@@ -64,10 +63,10 @@ def load_csv_safely(file_path, name):
             return df
         except UnicodeDecodeError:
             continue
-    print(f"Failed to load {name} with any encoding")
+    print(f"Failed to load {name}")
     sys.exit(1)
 
-# Load all datasets
+# Load datasets
 df_injury = load_csv_safely(INJURY_FILE, "OSHA Injury")
 df_sir = load_csv_safely(SIR_FILE, "OSHA SIR")
 df_abstracts = load_csv_safely(ABSTRACTS_FILE, "OSHA Abstracts")
@@ -77,17 +76,16 @@ def reconnect_db():
     connection.close()
     connection.connect()
 
-# Batch bulk_create helper
-def batch_create(model_class, objects, batch_size=10000):
+# Batch bulk_create
+def batch_create(model_class, objects, batch_size=20000):
     for i in range(0, len(objects), batch_size):
         reconnect_db()
         batch = objects[i:i + batch_size]
-        model_class.objects.bulk_create(batch)
+        model_class.objects.bulk_create(batch, ignore_conflicts=True)
         print(f"Inserted {len(batch)} records")
 
-# Process Injury data
+# Injury — optimized
 print("Processing injury data...")
-# Safe, future-proof assignments — no chained assignment warnings
 df_injury = df_injury.assign(
     date = pd.to_datetime(df_injury.get('created_timestamp', pd.Series()), errors='coerce')
         .apply(lambda dt: timezone.make_aware(dt) if pd.notna(dt) else timezone.now()),
@@ -98,23 +96,24 @@ df_injury = df_injury.assign(
     equipment_involved = 'Unknown'
 )
 
+placeholder_location = Location.objects.create(name="OSHA Aggregate", address="N/A", site_manager="System")
+placeholder_type = IncidentType.objects.create(name="OSHA Injury Aggregate", description="Aggregated OSHA injury record")
+
 incidents = []
-for _, row in tqdm(df_injury.iterrows(), total=len(df_injury), desc="Injury incidents"):
-    location = Location.objects.create(name="Unknown", address="N/A", site_manager="N/A")
-    itype = IncidentType.objects.create(name="General Injury", description="OSHA reported")
+for _, row in tqdm(df_injury.iterrows(), total=len(df_injury), desc="Building injury incidents"):
     incidents.append(Incident(
         date=row['date'],
         description=row['description'],
         severity=row['severity'],
         equipment_involved=row['equipment_involved'],
-        location=location,
-        type=itype,
+        location=placeholder_location,
+        type=placeholder_type,
         data_source='injury'
     ))
 
 batch_create(Incident, incidents)
 
-# Process SIR data
+# SIR — optimized
 print("Processing SIR data...")
 df_sir = df_sir.assign(
     date = pd.to_datetime(df_sir.get('EventDate', pd.Series()), format='%m/%d/%Y', errors='coerce')
@@ -124,23 +123,24 @@ df_sir = df_sir.assign(
     equipment_involved = df_sir.get('Secondary Source Title', df_sir.get('SourceTitle', 'None')).fillna('None')
 )
 
+placeholder_location = Location.objects.create(name="OSHA Aggregate", address="N/A", site_manager="System")
+placeholder_type = IncidentType.objects.create(name="OSHA SIR Aggregate", description="Aggregated OSHA SIR record")
+
 incidents = []
-for _, row in tqdm(df_sir.iterrows(), total=len(df_sir), desc="SIR incidents"):
-    location = Location.objects.create(name="Unknown", address="N/A", site_manager="N/A")
-    itype = IncidentType.objects.create(name=row.get('EventTitle', 'Unknown'), description="SIR reported")
+for _, row in tqdm(df_sir.iterrows(), total=len(df_sir), desc="Building SIR incidents"):
     incidents.append(Incident(
         date=row['date'],
         description=row['description'],
         severity=row['severity'],
         equipment_involved=row['equipment_involved'],
-        location=location,
-        type=itype,
+        location=placeholder_location,
+        type=placeholder_type,
         data_source='sir'
     ))
 
 batch_create(Incident, incidents)
 
-# Process Abstracts data
+# Abstracts — optimized
 print("Processing Abstracts data...")
 df_abstracts = df_abstracts.assign(
     date = pd.to_datetime(df_abstracts.get('Event Date', pd.Series()), format='%m/%d/%Y', errors='coerce')
@@ -150,27 +150,24 @@ df_abstracts = df_abstracts.assign(
     equipment_involved = df_abstracts.get('hazsub', 'None').fillna('None')
 )
 
+placeholder_location = Location.objects.create(name="OSHA Aggregate", address="N/A", site_manager="System")
+placeholder_type = IncidentType.objects.create(name="OSHA Abstract Aggregate", description="Aggregated OSHA Abstract record")
+
 incidents = []
-for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Abstracts incidents"):
-    location = Location.objects.create(name="Unknown", address="N/A", site_manager="N/A")
-    itype = IncidentType.objects.create(name="Abstract Incident", description="OSHA abstracts")
+for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Building Abstracts incidents"):
     incidents.append(Incident(
         date=row['date'],
         description=row['description'],
         severity=row['severity'],
         equipment_involved=row['equipment_involved'],
-        location=location,
-        type=itype,
+        location=placeholder_location,
+        type=placeholder_type,
         data_source='abstracts'
     ))
 
 batch_create(Incident, incidents)
 
-# Optional simulated data - EPCs or other users would modify this section with a pull from their own actual historical data. 
-# The data needs to carry as many of the attributes listed below (date, description, severity, weather, equipment_involved, location,
-# type) as possible. Note that weather, equipment, severity, date, month, and state are really vital to the risk model. Also, the 
-# data_source value should be updated to indicate the name of the dataset, something like "internal_incident_data". Implementers should review
-# the OSHA injury data and try to make internal data look as similar as possible. I've tried to implement some error handling, but GIGO.
+# Simulated data
 print("Generating 10K simulated incidents...")
 fake = Faker()
 types = ['Falls', 'Struck By', 'Caught In', 'Electrical', 'Chemical']
