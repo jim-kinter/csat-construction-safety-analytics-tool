@@ -82,7 +82,7 @@ def batch_create(model_class, objects, batch_size=20000):
         reconnect_db()
         batch = objects[i:i + batch_size]
         model_class.objects.bulk_create(batch, ignore_conflicts=True)
-        print(f"Inserted {len(batch)} records")
+        print(f"Inserted {len(batch)} of {len(objects)} records")
 
 # Injury — optimized
 print("Processing injury data...")
