@@ -117,7 +117,20 @@ This is **preventable tragedy, stopped**.
 - **macOS**: Docker Desktop (latest) → same link above
 - **Linux**: Docker Engine + docker-compose plugin (already installed on most distros)
 
-#### Try It Now (you'll need to go to <https://platform.openai.com> to get an API key and then paste that API key in the script below)
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+You are free to use, modify, and distribute CSAT for any purpose (including commercial).
+
+**I kindly ask** that if you use or modify CSAT in your own projects, you:
+
+- Give credit by keeping the copyright notice
+- Let me know! I'd love to hear how it's being used — email me at [your email] or open an issue here.
+
+Thank you for respecting the spirit of open collaboration.
+
+### Try It Now (you'll need to go to <https://platform.openai.com> to get an API key and then paste that API key in the script below)
 
 ```bash
 # Clone and enter

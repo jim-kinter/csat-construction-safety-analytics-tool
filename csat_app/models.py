@@ -32,6 +32,7 @@ class Incident(models.Model):
     outcome = models.TextField(null=True)
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True)
     type = models.ForeignKey(IncidentType, on_delete=models.SET_NULL, null=True)
+    data_source = models.CharField(max_length=50, default='unknown')
 
 #Removed from Scope. Retained for later implementation
 #class IncidentEmployee(models.Model):

@@ -102,7 +102,8 @@ for _, row in tqdm(df_injury.iterrows(), total=len(df_injury), desc="Injury inci
         severity=row['severity'],
         equipment_involved=row['equipment_involved'],
         location=location,
-        type=itype
+        type=itype,
+        data_source='injury'
     ))
 
 batch_create(Incident, incidents)
@@ -124,7 +125,8 @@ for _, row in tqdm(df_sir.iterrows(), total=len(df_sir), desc="SIR incidents"):
         severity=row['severity'],
         equipment_involved=row['equipment_involved'],
         location=location,
-        type=itype
+        type=itype,
+        data_source='sir'
     ))
 
 batch_create(Incident, incidents)
@@ -146,12 +148,13 @@ for _, row in tqdm(df_abstracts.iterrows(), total=len(df_abstracts), desc="Abstr
         severity=row['severity'],
         equipment_involved=row['equipment_involved'],
         location=location,
-        type=itype
+        type=itype,
+        data_source='abstracts'
     ))
 
 batch_create(Incident, incidents)
 
-# Optional simulated data
+# Optional simulated data - EPCs would replace this section with a pull from their own historical data
 print("Generating 10K simulated incidents...")
 fake = Faker()
 types = ['Falls', 'Struck By', 'Caught In', 'Electrical', 'Chemical']
@@ -166,7 +169,8 @@ for i in tqdm(range(10000), desc="Simulated"):
         weather=random.choice(['Clear', 'Rainy', 'Hot', 'Cold']),
         equipment_involved=random.choice(['Crane', 'Scaffold', 'Welder', 'Ladder']),
         location=location,
-        type=itype
+        type=itype,
+        data_source='simulated'
     )
 
 print("All data loaded successfully!")
