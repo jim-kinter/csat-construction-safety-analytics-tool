@@ -116,14 +116,14 @@ class RiskPredictionView(View):
         })
 
     def run_prediction(self, activity_name, equipment, height, month, state, crew):
-        # Load model and encoders (unchanged)
+        # Load model and encoders
         model = joblib.load('risk_model.joblib')
         le_weather = joblib.load('le_weather.joblib')
         le_equipment = joblib.load('le_equipment.joblib')
         le_severity = joblib.load('le_severity.joblib')
 
-        # Dummy weather based on month/state (expand later with real API)
-        weather = 'Hot' if month in ['June', 'July', 'August'] and state in ['TX', 'FL', 'AZ'] else 'Unknown'
+        # Dummy weather based on month/state
+        weather = 'Hot' if month in ['June', 'July', 'August'] and state in ['TX', 'FL', 'AZ', 'GA', 'LA'] else 'Clear'
 
         try:
             weather_enc = le_weather.transform([weather])[0]
@@ -132,35 +132,43 @@ class RiskPredictionView(View):
             weather_enc = 0
             equip_enc = 0
 
-        # Updated input with new features (dummy encoding for now)
-        # These add simple risk boosts – retrain model later to incorporate properly
-        height_risk = min(height / 30.0, 1.0)  # Normalize height (risk caps at 30ft+)
-        crew_risk = min((crew - 5) / 10.0, 1.0) if crew > 5 else 0  # Larger crews add risk
-        month_risk = 0.5 if month in ['June', 'July', 'August'] else 0  # Hot months
-        state_risk = 0.3 if state in ['TX', 'CA', 'FL'] else 0  # High-incident states
+        # Month number for model
+        month_map = {
+            'January': 1, 'February': 2, 'March': 3, 'April': 4,
+            'May': 5, 'June': 6, 'July': 7, 'August': 8,
+            'September': 9, 'October': 10, 'November': 11, 'December': 12
+        }
+        month_num = month_map.get(month.capitalize(), 6)  # default June
 
-        # MUST use the exact column names the model was trained on
-        input_df = pd.DataFrame({
-            'weather_enc': [weather_enc],
-            'equip_enc': [equip_enc]
-        })
+        # Safe input DataFrame (no chained assignment)
+        input_df = pd.DataFrame().assign(
+            weather_enc = [weather_enc],
+            equip_enc = [equip_enc],
+            month_enc = [month_num]
+        )
 
+        # Model prediction
         probas = model.predict_proba(input_df)[0]
         pred_class = model.predict(input_df)[0]
         severity = le_severity.inverse_transform([pred_class])[0]
 
-        # Boost base risk score with new factors
+        # Rule-based risk boost
+        height_risk = min(height / 30.0, 1.0)
+        crew_risk = min(max(crew - 5, 0) / 10.0, 1.0)
+        month_risk = 0.5 if month in ['June', 'July', 'August'] else 0.0
+        state_risk = 0.3 if state in ['TX', 'CA', 'FL', 'GA', 'LA'] else 0.0
+
         base_risk = max(probas)
         adjusted_risk = base_risk + (height_risk * 0.3) + (crew_risk * 0.2) + month_risk + state_risk
-        risk_score = min(adjusted_risk, 1.0)  # Cap at 1.0
+        risk_score = min(adjusted_risk, 1.0)
 
-        # Dynamic recommendations based on new factors
+        # Recommendations
         recommendations = []
         if height > 20:
             recommendations.append("100% fall protection / tie-off required")
         if height > 50:
             recommendations.append("Personal fall arrest system mandatory")
-        if month in ["Jun", "Jul", "Aug"] and state in ["TX", "FL", "AZ"]:
+        if month in ['June', 'July', 'August'] and state in ['TX', 'FL', 'AZ', 'GA', 'LA']:
             recommendations.append("Mandatory heat-illness prevention plan")
         if crew > 12:
             recommendations.append("Additional spotter/supervisor recommended")
@@ -169,7 +177,7 @@ class RiskPredictionView(View):
 
         rec_text = ' • '.join(recommendations) if recommendations else 'Standard precautions sufficient.'
 
-        # Update severity based on adjusted risk (optional override)
+        # Final severity override
         if risk_score > 0.7:
             severity = 'High'
         elif risk_score > 0.4:
@@ -178,9 +186,9 @@ class RiskPredictionView(View):
             severity = 'Low'
 
         return {
-            'risk_score': round(risk_score, 3),
-            'assessment': severity,  # renamed from 'severity' to match template
-            'predicted_incident': f"Predicted {severity} severity incident",  # dummy
+            'risk_score': float(risk_score),  # ← Python float for JSON serialization
+            'assessment': severity,
+            'predicted_incident': f"Predicted {severity} severity incident",
             'recommendation': rec_text
         }
     
@@ -202,40 +210,40 @@ class SimilarIncidentsView(View):
 # ----------------------------------------------------------------------
 @login_required
 def save_plan(request):
-    if request.method == "POST":
+    if request.method == 'POST':
+        plan_name = request.POST.get('plan_name', 'Untitled Plan')
         activities = request.session.get('draft_activities', [])
+
         if not activities:
-            messages.error(request, "Nothing to save.")
+            messages.error(request, "No activities to save.")
             return redirect('risk_assessment')
 
-        # THIS LINE IS THE ONLY ONE THAT WORKS
-        user = User.objects.get(username=request.user.username)
-
-        plan = SavedPlan.objects.create(
-            name=request.POST.get('plan_name', 'Untitled Plan'),
-            created_by=user,
+        # Save without requiring login — use session ID as identifier
+        SavedPlan.objects.create(
+            name=plan_name,
+            created_by=None,  # no user required
             activities_json=activities
         )
-        request.session['draft_activities'] = []
-        messages.success(request, f"Plan '{plan.name}' saved!")
-        return redirect('risk_assessment')
-    return redirect('risk_assessment')
+
+        messages.success(request, f"Plan '{plan_name}' saved successfully!")
+        request.session['draft_activities'] = []  # clear draft after save
+
+    return redirect('my_plans')
 
 @login_required
 def my_plans(request):
-    user = User.objects.get(username=request.user.username)
-    plans = SavedPlan.objects.filter(created_by=user).order_by('-created_at')
-    return render(request, 'csat_app/my_plans.html', {'plans': plans})
+    draft_activities = request.session.get('draft_activities', [])
+    
+    saved_plans = SavedPlan.objects.filter(created_by=request.user).order_by('-created_at')
+
+    return render(request, 'csat_app/my_plans.html', {
+        'activities': draft_activities,
+        'saved_plans': saved_plans,
+    })
 
 @login_required
 def load_plan(request, plan_id):
-    try:
-        user = User.objects.get(id=request.user.id)
-    except (User.DoesNotExist, AttributeError):
-        messages.error(request, "Authentication error.")
-        return redirect('landing')
-
-    plan = get_object_or_404(SavedPlan, id=plan_id, created_by=user)
+    plan = get_object_or_404(SavedPlan, id=plan_id, created_by=request.user)
     request.session['draft_activities'] = plan.activities_json
     messages.success(request, f"Plan '{plan.name}' loaded!")
     return redirect('risk_assessment')
