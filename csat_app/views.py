@@ -565,3 +565,56 @@ def analytics_dashboard(request):
 
     return render(request, 'csat_app/analytics.html', charts)
 
+#-------------------------------------------------
+#
+# Generate Briefing
+#
+#-------------------------------------------------
+
+def generate_briefing(request, plan_id):
+    plan = get_object_or_404(SavedPlan, id=plan_id)
+    activities = plan.activities_json  # list of dicts
+
+    # Get recent events (last 30 days)
+    recent_incidents = Incident.objects.filter(date__gte=timezone.now() - timedelta(days=30))
+
+    # Get trends (simple example – customize as needed)
+    high_risk_equipment = recent_incidents.values('equipment_involved').annotate(count=models.Count('id')).order_by('-count')[:3]
+    trends = [f"{eq['equipment_involved']} ({eq['count']} incidents)" for eq in high_risk_equipment]
+
+    # Generate briefing with GPT-4o
+    prompt = f"""
+    Generate a simple daily safety briefing for a construction crew based on this plan:
+    
+    Plan Activities: {', '.join([act.get('name', 'Unknown') for act in activities])}
+    
+    Recent Events (last 30 days): {recent_incidents.count()} incidents reported.
+    
+    Trends: High-risk equipment includes {', '.join(trends)}.
+    
+    Briefing Structure:
+    1. Weather Outlook (assume typical for site)
+    2. Key Risks from Plan and Trends
+    3. Mitigation Steps (engineering, administrative, PPE)
+    4. Crew Reminders and Emergency Contacts
+    
+    Keep it concise (300-500 words), professional, and actionable.
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=600
+        )
+        briefing_text = response.choices[0].message.content.strip()
+    except:
+        briefing_text = "Briefing generation failed — use manual safety template."
+
+    # Render PDF (using your existing export_pdf logic)
+    template = get_template('csat_app/briefing_pdf.html') 
+    html = template.render({'briefing_text': briefing_text, 'plan': plan})
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="daily_safety_briefing_{plan.name}.pdf"'
+    return response

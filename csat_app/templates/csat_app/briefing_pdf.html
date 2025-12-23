@@ -1,0 +1,11 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Daily Safety Briefing - {{ plan.name }}</title>
+</head>
+<body>
+    <h1>Daily Safety Briefing for {{ plan.name }}</h1>
+    <p>{{ briefing_text | safe }}</p>
+</body>
+</html>

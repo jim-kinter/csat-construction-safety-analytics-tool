@@ -23,7 +23,7 @@
                 <td>{{ plan.created_at|date:"M d, Y H:i" }}</td>
                 <td>{{ plan.activities_json|length }} activities</td>
                 <td>
-                    <a href="{% url 'load_plan' plan.id %}" class="btn btn-primary btn-sm">Load</a>
+                    <a href="{% url 'load_plan' plan.id %}" class="btn btn-primary btn-sm">Load</a><a href="{% url 'generate_briefing' plan.id %}" class="btn btn-primary">Generate Daily Safety Briefing</a>
                 </td>
             </tr>
             {% endfor %}

@@ -25,4 +25,7 @@ urlpatterns = [
     
     # Authentication
     path('logout/', views.logout_view, name='logout'),  # ← NOW INCLUDED
+
+    # Daily Briefing
+    path('generate-briefing/<int:plan_id>/', views.generate_briefing, name='generate_briefing'),
 ]
