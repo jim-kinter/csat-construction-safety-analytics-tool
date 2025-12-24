@@ -10,7 +10,7 @@ joblib==1.4.2
 plotly==5.24.1
 kaleido==0.2.1
 statsmodels==0.14.4
-weasyprint==62.3
+weasyprint==62.0
 openai==1.55.3  
 httpx==0.28.0
 xgboost==2.1.1

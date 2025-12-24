@@ -1,11 +1,26 @@
-{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <title>Daily Safety Briefing - {{ plan.name }}</title>
+    <meta charset="utf-8">
+    <title>Daily Safety Briefing - {{ plan_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #003366; text-align: center; }
+        h2 { color: #005599; }
+        p { margin: 10px 0; }
+        ul { margin-left: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+    </style>
 </head>
 <body>
-    <h1>Daily Safety Briefing for {{ plan.name }}</h1>
-    <p>{{ briefing_text | safe }}</p>
+    <div class="header">
+        <h1>Daily Safety Briefing</h1>
+        <p><strong>Plan:</strong> {{ plan_name }}</p>
+        <p><strong>Date:</strong> {{ date }}</p>
+        <p><strong>Location:</strong> {{ location }}</p>
+    </div>
+    <div>
+        {{ briefing_text|linebreaksbr }}
+    </div>
 </body>
 </html>

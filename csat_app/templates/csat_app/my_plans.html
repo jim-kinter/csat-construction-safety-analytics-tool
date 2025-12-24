@@ -14,8 +14,9 @@
             <div>
                 <strong>{{ plan.name }}</strong> 
                 <small class="text-muted">(created {{ plan.created_at|date:"M d, Y" }})</small>
-            </div>
-            <a href="{% url 'load_plan' plan.id %}" class="btn btn-primary btn-sm">Load Plan</a>
+                <a href="{% url 'load_plan' plan.id %}" class="btn btn-primary btn-sm">Load Plan</a>
+                <a href="{% url 'generate_briefing' plan.id %}" class="btn btn-primary btn-sm">Generate Daily Safety Briefing</a>
+            </div>            
         </li>
     {% endfor %}
     </ul>

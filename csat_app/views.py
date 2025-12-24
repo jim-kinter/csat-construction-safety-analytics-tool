@@ -11,9 +11,11 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.template.loader import get_template
 from django.conf import settings
+from django.db import models
 from datetime import timedelta
 from openai import OpenAI # type: ignore
 import os
+import io
 
 import json
 import pandas as pd
@@ -582,49 +584,60 @@ def analytics_dashboard(request):
 #-------------------------------------------------
 
 def generate_briefing(request, plan_id):
-    plan = get_object_or_404(SavedPlan, id=plan_id)
-    activities = plan.activities_json  # list of dicts
+    plan = get_object_or_404(SavedPlan, id=plan_id, created_by=request.user if request.user.is_authenticated else None)
+    activities = plan.activities_json
 
-    # Get recent events (last 30 days)
-    recent_incidents = Incident.objects.filter(date__gte=timezone.now() - timedelta(days=30))
+    location_state = activities[0].get('state', 'Texas') if activities else 'Texas'
+    briefing_date = timezone.now().strftime('%B %d, %Y')
 
-    # Get trends (simple example – customize as needed)
-    high_risk_equipment = recent_incidents.values('equipment_involved').annotate(count=models.Count('id')).order_by('-count')[:3]
+    recent_incidents = Incident.objects.filter(date__gte=timezone.now() - timezone.timedelta(days=30))
+    high_risk_equipment = recent_incidents.values('equipment_involved') \
+        .annotate(count=models.Count('id')) \
+        .order_by('-count')[:3]
     trends = [f"{eq['equipment_involved']} ({eq['count']} incidents)" for eq in high_risk_equipment]
 
-    # Generate briefing with GPT-4o
     prompt = f"""
-    Generate a simple daily safety briefing for a construction crew based on this plan:
-    
-    Plan Activities: {', '.join([act.get('name', 'Unknown') for act in activities])}
-    
-    Recent Events (last 30 days): {recent_incidents.count()} incidents reported.
-    
-    Trends: High-risk equipment includes {', '.join(trends)}.
-    
-    Briefing Structure:
-    1. Weather Outlook (assume typical for site)
-    2. Key Risks from Plan and Trends
-    3. Mitigation Steps (engineering, administrative, PPE)
-    4. Crew Reminders and Emergency Contacts
-    
-    Keep it concise (300-500 words), professional, and actionable.
+    Generate a professional daily safety briefing for a construction crew.
+
+    Site Location: {location_state}
+    Date: {briefing_date}
+
+    Planned Activities: {', '.join([act.get('name', 'Unknown') for act in activities])}
+
+    Recent Trends: {', '.join(trends) or 'No recent incidents'}
+
+    Include:
+    1. Weather outlook for {location_state} today
+    2. Key risks from plan and trends
+    3. Mitigation steps (engineering → administrative → PPE)
+    4. Crew reminders and emergency procedures
+
+    Keep it concise (400 words), clear, and actionable.
     """
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=600
+            max_tokens=800,
+            temperature=0.3
         )
         briefing_text = response.choices[0].message.content.strip()
-    except:
-        briefing_text = "Briefing generation failed — use manual safety template."
+    except Exception as e:
+        print(f"OpenAI error: {e}")
+        briefing_text = "Briefing generation temporarily unavailable — use manual template."
 
-    # Render PDF (using your existing export_pdf logic)
-    template = get_template('csat_app/briefing_pdf.html') 
-    html = template.render({'briefing_text': briefing_text, 'plan': plan})
-    pdf = HTML(string=html).write_pdf()
+    # Use WeasyPrint with simple template
+    template = get_template('csat_app/briefing_pdf.html')
+    html_string = template.render({
+        'plan_name': plan.name,
+        'date': briefing_date,
+        'location': location_state,
+        'briefing_text': briefing_text
+    })
+
+    pdf = HTML(string=html_string).write_pdf()
 
     response = HttpResponse(pdf, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="daily_safety_briefing_{plan.name}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="Daily_Briefing_{plan.name}_{briefing_date}.pdf"'
     return response
