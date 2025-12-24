@@ -218,10 +218,9 @@ def save_plan(request):
             messages.error(request, "No activities to save.")
             return redirect('risk_assessment')
 
-        # Save without requiring login — use session ID as identifier
         SavedPlan.objects.create(
             name=plan_name,
-            created_by=request.user,  # no user required
+            created_by=request.user, 
             activities_json=activities
         )
 
@@ -459,6 +458,7 @@ def analytics_dashboard(request):
             weather = 'Hot' if act.get('month') in ['June','July','August'] and act.get('state') in ['TX','FL','AZ','GA','LA'] else 'Clear'
 
             try:
+                # print("Calling OpenAI with prompt for activity:", act.get('name'))
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[
@@ -477,7 +477,9 @@ def analytics_dashboard(request):
                     temperature=0.3
                 )
                 mitigation = response.choices[0].message.content.strip().replace('\n', '<br>')
-            except:
+                # print("OpenAI Response received:", mitigation)
+            except Exception as e:
+                # print("OpenAI call failed:", str(e))
                 mitigation = "• Immediate job hazard analysis required<br>• Apply hierarchy of controls<br>• Consult site safety officer"
 
             # Build hover tooltip

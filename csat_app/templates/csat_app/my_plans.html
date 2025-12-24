@@ -5,36 +5,39 @@
 {% block content %}
 <h1>My Saved Plans</h1>
 
-{% if plans %}
-<table class="table-wrapper">
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Saved On</th>
-                <th>Activities</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for plan in plans %}
-            <tr>
-                <td><strong>{{ plan.name }}</strong></td>
-                <td>{{ plan.created_at|date:"M d, Y H:i" }}</td>
-                <td>{{ plan.activities_json|length }} activities</td>
-                <td>
-                    <a href="{% url 'load_plan' plan.id %}" class="btn btn-primary btn-sm">Load</a><a href="{% url 'generate_briefing' plan.id %}" class="btn btn-primary">Generate Daily Safety Briefing</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</table>
+<!-- Saved Plans (from DB) -->
+{% if saved_plans %}
+    <h2>Saved Plans</h2>
+    <ul class="list-group mb-4">
+    {% for plan in saved_plans %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ plan.name }}</strong> 
+                <small class="text-muted">(created {{ plan.created_at|date:"M d, Y" }})</small>
+            </div>
+            <a href="{% url 'load_plan' plan.id %}" class="btn btn-primary btn-sm">Load Plan</a>
+        </li>
+    {% endfor %}
+    </ul>
 {% else %}
-<p>You haven't saved any plans yet.</p>
+    <p>You haven't saved any plans yet.</p>
 {% endif %}
 
-<p style="margin-top: 30px;">
-    <a href="{% url 'risk_assessment' %}" class="btn btn-success">← Back to Risk Assessment</a>
-</p>
+<!-- Current Draft Plan (from session) -->
+<h2>Current Draft Plan</h2>
+{% if activities %}
+    <p>You have {{ activities|length }} activities in your current draft:</p>
+    <ul class="list-group mb-4">
+    {% for act in activities %}
+        <li class="list-group-item">
+            {{ act.name }} ({{ act.height }} ft, {{ act.month }}, {{ act.state }}, crew: {{ act.crew }})
+        </li>
+    {% endfor %}
+    </ul>
+    <a href="{% url 'risk_assessment' %}" class="btn btn-success">Back to Risk Assessment</a>
+{% else %}
+    <p>No activities in current draft.</p>
+    <a href="{% url 'risk_assessment' %}" class="btn btn-primary">Go to Risk Assessment</a>
+{% endif %}
+
 {% endblock %}
