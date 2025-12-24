@@ -587,15 +587,18 @@ def generate_briefing(request, plan_id):
     plan = get_object_or_404(SavedPlan, id=plan_id, created_by=request.user if request.user.is_authenticated else None)
     activities = plan.activities_json
 
+    # Location and date
     location_state = activities[0].get('state', 'Texas') if activities else 'Texas'
     briefing_date = timezone.now().strftime('%B %d, %Y')
 
+    # Trends
     recent_incidents = Incident.objects.filter(date__gte=timezone.now() - timezone.timedelta(days=30))
     high_risk_equipment = recent_incidents.values('equipment_involved') \
         .annotate(count=models.Count('id')) \
         .order_by('-count')[:3]
     trends = [f"{eq['equipment_involved']} ({eq['count']} incidents)" for eq in high_risk_equipment]
 
+    # GPT-4o briefing
     prompt = f"""
     Generate a professional daily safety briefing for a construction crew.
 
@@ -627,7 +630,7 @@ def generate_briefing(request, plan_id):
         print(f"OpenAI error: {e}")
         briefing_text = "Briefing generation temporarily unavailable — use manual template."
 
-    # Use WeasyPrint with simple template
+    # Render to PDF with WeasyPrint (correct usage)
     template = get_template('csat_app/briefing_pdf.html')
     html_string = template.render({
         'plan_name': plan.name,
@@ -636,7 +639,8 @@ def generate_briefing(request, plan_id):
         'briefing_text': briefing_text
     })
 
-    pdf = HTML(string=html_string).write_pdf()
+    html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
+    pdf = html.write_pdf()
 
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="Daily_Briefing_{plan.name}_{briefing_date}.pdf"'
