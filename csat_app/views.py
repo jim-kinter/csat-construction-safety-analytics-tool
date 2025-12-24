@@ -23,7 +23,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing # type: ignore
 from weasyprint import HTML # type: ignore
 import joblib
 
-from .models import Incident, SavedPlan, Location, User, IncidentType #, IncidentEmployee, Employee
+from .models import Incident, SavedPlan, Location, IncidentType #, IncidentEmployee, Employee, User
 from .forms import ActivityListForm
 
 # ----------------------------------------------------------------------
@@ -221,7 +221,7 @@ def save_plan(request):
         # Save without requiring login — use session ID as identifier
         SavedPlan.objects.create(
             name=plan_name,
-            created_by=None,  # no user required
+            created_by=request.user,  # no user required
             activities_json=activities
         )
 

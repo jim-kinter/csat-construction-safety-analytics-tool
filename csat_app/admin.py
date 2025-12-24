@@ -1,7 +1,7 @@
 from django.contrib import admin
-from .models import SavedPlan, User, Location, IncidentType, Incident #,Employee, IncidentEmployee
+from .models import SavedPlan, Location, IncidentType, Incident #,Employee, IncidentEmployee, #User
 
-admin.site.register(User)
+#admin.site.register(User)
 admin.site.register(Location)
 #admin.site.register(Employee)
 admin.site.register(IncidentType)
