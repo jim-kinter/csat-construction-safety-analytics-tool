@@ -584,6 +584,7 @@ def analytics_dashboard(request):
 #-------------------------------------------------
 
 def generate_briefing(request, plan_id):
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     plan = get_object_or_404(SavedPlan, id=plan_id, created_by=request.user if request.user.is_authenticated else None)
     activities = plan.activities_json
 
@@ -627,8 +628,8 @@ def generate_briefing(request, plan_id):
         )
         briefing_text = response.choices[0].message.content.strip()
     except Exception as e:
-        print(f"OpenAI error: {e}")
-        briefing_text = "Briefing generation temporarily unavailable — use manual template."
+        # print(f"OpenAI ERROR: {type(e).__name__} - {str(e)}")
+        briefing_text = f"Briefing generation temporarily unavailable — use manual template. OpenAI ERROR: {type(e).__name__} - {str(e)}"
 
     # Render to PDF with WeasyPrint (correct usage)
     template = get_template('csat_app/briefing_pdf.html')
