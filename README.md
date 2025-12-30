@@ -128,7 +128,7 @@ You are free to use, modify, and distribute CSAT for any purpose (including comm
 **I kindly ask** that if you use or modify CSAT in your own projects, you:
 
 - Give credit by keeping the copyright notice
-- Let me know! I'd love to hear how it's being used — email me at [your email] or open an issue here.
+- Let me know! I'd love to hear how it's being used — email me at jkinter-at-gmail-dot-com or open an issue here.
 
 Thank you for respecting the spirit of open collaboration.
 
